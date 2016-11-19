@@ -1,0 +1,1923 @@
+#include <Adafruit_NeoPixel.h>
+
+#define PIN 6
+
+int val;
+
+
+uint8_t t1, t2, t3;
+uint8_t Temp[55] = {0};
+uint8_t temp[3][3];//翻转中间变量
+uint8_t i, j, k, n, m; //循环计数
+int a;
+int d = 0;
+int mark = 0;
+int ledPin = 13;
+
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(54, PIN, NEO_GRB + NEO_KHZ800);      // Constructor: number of LEDs, pin number, LED type
+
+uint32_t  Red = strip.Color(255, 0, 0);  
+uint32_t  Blue = strip.Color(0, 0, 255);  
+uint32_t  Yellow = strip.Color(255, 255, 0);
+uint32_t  White = strip.Color(255, 255, 255);
+uint32_t  Green = strip.Color(0, 255, 0);
+uint32_t  Magenta = strip.Color(255, 80, 0);
+
+uint32_t  Black = strip.Color(0, 0, 0);      //Completely power down
+
+uint8_t comdata[54] = {0};   // Data Buffer
+
+uint8_t arrayOut[6][3][3] = {0};
+uint8_t Temp_Pixel[54] = {0};
+
+//uint8_t Pixel[55] = {  0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02,
+//                       0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04,
+//                       0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x00 };   //Pixel Value  Configure
+                       
+uint8_t Pixel[55] = {  0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03,0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06,
+                       0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02,  0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05,
+                       0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x00 };   //Pixel Value  Configure
+
+void setup() 
+{                           //only execute one time
+  strip.begin();              //Initialization
+  strip.show();               // Initialize all pixels to 'off'  
+  Serial.begin( 115200 );      //baud rate 115200
+  pinMode( ledPin,OUTPUT );     //output LED
+ // exchange13();
+ // Lightcube_Init();           //lightcube initialization
+    colorWipe( 0 );
+    Lightcube_Init();           //lightcube initialization
+ 
+}
+
+
+void loop() 
+{
+//   int j = 0;
+//   
+//   while( Serial.available() > 0 )
+//   {  
+//      comdata[j] = Serial.read();
+//      j++;
+//      delay(1);
+//      mark = 1;
+//   }
+//   
+//   Serial.flush();
+//   
+//   if( mark == 1 )
+//   {
+//    //   Serial.println(comdata.length());  //
+//     //  Serial.println(comdata);  //
+//       
+//       for( uint8_t i=0; i < 55; i++ )
+//       {
+//            Pixel[i] = comdata[i];                      
+//       }
+//	   
+//       // comdata = String("");    //Flush the Buffer
+//      
+//        for(d=0;d<5;d++)
+//       {
+//          colorWipe( 600 ); 
+//       }
+//       
+//      memset(comdata,'\0',sizeof(comdata));
+//	   
+//      mark = 0;
+//      d = 0;
+//      j= 0;
+//   }
+
+  // val = Serial.read();
+  
+ //   colorWipe( 0 );
+    val = Serial.read();
+    
+    Serial.flush();
+  //  colorWipe( 600 );
+  //  val = 3;
+   // val = 64;
+    
+    if( val <= 30 )     //Used for Rotate
+   {  
+	  fuzhi_a();
+	  memcpy(arrayOut, Temp_Pixel, sizeof(uint8_t) * 54);
+          rotateCube();     //Rotate the lightcube
+	  memcpy(Temp_Pixel, arrayOut, sizeof(uint8_t) * 54);
+	  fuzhi_b();
+	  colorWipe( 1000 );
+   }
+   
+      if( val > 30 )   //Used for 
+    {
+        shanshuo();
+       for(d=0;d<7;d++)
+       {
+          colorWipe( 200 ); 
+       }
+       
+       for( uint8_t i=0; i < 54; i++ )     //LED numbers
+        {	
+	    if(Pixel[i]>0x0F)
+	    {
+		Pixel[i] -= 0x10;
+	     }
+          }
+    }
+      
+  // for(d=0;d<20;d++)
+   // {
+	// colorWipe( 500 ); 
+   // }
+    
+}
+
+
+void colorWipe( uint32_t wait )   //uint32_t c,
+{   
+  strip.setBrightness(100);           //set the brightness 
+  
+  if(Pixel[54] == 0x00)
+  {
+    for( uint8_t i=0; i < 54; i++ )     //LED numbers
+    {
+	 if(Pixel[i] == 0x01)
+	 {
+	      strip.setPixelColor(i, Blue);       
+              strip.show();
+	 }
+	 else if(Pixel[i] == 0x02)
+	 {
+		strip.setPixelColor(i, White);       
+                strip.show(); 
+	 }
+	 else if(Pixel[i] == 0x03)
+	 {
+		strip.setPixelColor(i, Yellow);       
+                strip.show(); 
+	 }
+	 else if(Pixel[i] == 0x04)
+	 {
+		strip.setPixelColor(i, Green);       
+                strip.show(); 
+	 }
+	 else if(Pixel[i] == 0x05)
+	 {
+		strip.setPixelColor(i, Magenta);       
+                strip.show(); 
+	 }
+	 else if(Pixel[i] == 0x06)
+	 {
+		strip.setPixelColor(i, Red);       
+                strip.show(); 
+	 }
+	 else if(Pixel[i] > 0x0F)
+	 {
+		 if(d%2 == 0)
+		 {
+			 if(Pixel[i] == 0x11)
+	                {
+	                               strip.setPixelColor(i, Blue);       
+					strip.show();
+				}
+				else if(Pixel[i] == 0x12)
+				{
+						strip.setPixelColor(i, White);       
+						strip.show(); 
+			        }
+				else if(Pixel[i] == 0x13)
+				{
+						strip.setPixelColor(i, Yellow);       
+						strip.show(); 
+				}
+				else if(Pixel[i] == 0x14)
+				{
+						strip.setPixelColor(i, Green);       
+						strip.show(); 
+				}
+				else if(Pixel[i] == 0x15)
+				{
+						strip.setPixelColor(i, Magenta);       
+						strip.show(); 
+				}
+				else if(Pixel[i] == 0x16)
+				{
+						strip.setPixelColor(i, Red);       
+						strip.show(); 
+				}
+		 }
+		 else
+		 {
+			  strip.setPixelColor(i, Black); 
+                          strip.show();
+		 }
+	 }
+	 
+     }
+  }
+  else if(Pixel[54] == 0x01)
+  {
+       for( uint16_t i = 0; i < 54; i++ )     //LED numbers
+      {
+	 if(Pixel[i] == 0x01)
+	 {
+	      strip.setPixelColor(i, Blue);       
+              strip.show();
+	 }
+	 else if(Pixel[i] == 0x02)
+	 {
+		strip.setPixelColor(i, White);       
+                strip.show(); 
+	 }
+	 else if(Pixel[i] == 0x03)
+	 {
+		strip.setPixelColor(i, Yellow);       
+                strip.show(); 
+	 }
+	 else if(Pixel[i] == 0x04)
+	 {
+		strip.setPixelColor(i, Green);       
+                strip.show(); 
+	 }
+	 else if(Pixel[i] == 0x05)
+	 {
+		strip.setPixelColor(i, Magenta);       
+                strip.show(); 
+	 }
+	 else if(Pixel[i] == 0x06)
+	 {
+		strip.setPixelColor(i, Red);       
+                strip.show(); 
+	 }
+	 else if(Pixel[i] > 0x0F)
+	 {
+			 if(Pixel[i] == 0x11)
+	                {
+	                               strip.setPixelColor(i, Blue);       
+					strip.show();
+				}
+				else if(Pixel[i] == 0x12)
+				{
+						strip.setPixelColor(i, White);       
+						strip.show(); 
+					}
+				else if(Pixel[i] == 0x13)
+				{
+						strip.setPixelColor(i, Yellow);       
+						strip.show(); 
+				}
+				else if(Pixel[i] == 0x14)
+				{
+						strip.setPixelColor(i, Green);       
+						strip.show(); 
+				}
+				else if(Pixel[i] == 0x15)
+				{
+						strip.setPixelColor(i, Magenta);       
+						strip.show(); 
+				}
+				else if(Pixel[i] == 0x16)
+				{
+						strip.setPixelColor(i, Red);       
+						strip.show(); 
+				}
+		 
+		
+	       }
+	 
+	
+   
+     }
+      
+  }
+  
+  delay(wait);    //1000ms
+}
+
+
+void Lightcube_Init(void)
+{
+      int j = 0;
+  
+      // while( Serial.available() > 0 )
+     // {  
+         // comdata[j] = Serial.read();
+         // j++;
+         // delay(1);
+         // mark = 1;
+     // }
+     do{ 
+        while( Serial.available() > 0 )
+         {
+           comdata[j] = Serial.read();
+           j++;
+           delay(1);
+           mark = 1;	
+          }
+         }while(j<54);
+     
+     Serial.flush();
+  
+     if( mark == 1 )
+    {
+      for( uint8_t i=0; i < 54; i++ )
+      {
+           Pixel[i] = comdata[i];                      
+      }
+	  
+     colorWipe( 100 ); 
+        
+     memset(comdata,'\0',sizeof(comdata));
+	   
+     mark = 0;
+     d = 0;
+     j= 0;
+    }
+	
+}
+
+
+void rainbow(uint8_t wait) {
+  uint16_t i, j;
+
+  for(j=0; j<256; j++) {
+    for(i=0; i<strip.numPixels(); i++) {
+      strip.setPixelColor(i, Wheel((i+j) & 255));
+    }
+    strip.show();
+    delay(wait);
+  }
+}
+
+// Slightly different, this makes the rainbow equally distributed throughout
+void rainbowCycle(uint8_t wait) {
+  uint16_t i, j;
+
+  for(j=0; j<256*5; j++) { // 5 cycles of all colors on wheel
+    for(i=0; i< strip.numPixels(); i++) {         //LED numbers
+      strip.setPixelColor(i, Wheel(((i * 256 / strip.numPixels()) + j) & 255));
+    }
+    strip.show();
+    delay(wait);
+  }
+}
+
+// Input a value 0 to 255 to get a color value    输入0-255得到颜色值
+// The colours are a transition r - g - b - back to r    将打包的RGB值复原
+uint32_t Wheel(byte WheelPos) {
+  if(WheelPos < 85) {
+   return strip.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
+  } else if(WheelPos < 170) {
+   WheelPos -= 85;
+   return strip.Color(255 - WheelPos * 3, 0, WheelPos * 3);
+  } else {
+   WheelPos -= 170;
+   return strip.Color(0, WheelPos * 3, 255 - WheelPos * 3);
+  }
+}
+
+
+void fuzhi_a()
+{
+	Temp_Pixel[0] = Pixel[0]; Temp_Pixel[3] = Pixel[1]; Temp_Pixel[6] = Pixel[2]; 
+	Temp_Pixel[7] = Pixel[3]; Temp_Pixel[4] = Pixel[4]; Temp_Pixel[1] = Pixel[5];
+	Temp_Pixel[2] = Pixel[6]; Temp_Pixel[5] = Pixel[7]; Temp_Pixel[8] = Pixel[8];
+	
+	Temp_Pixel[33] = Pixel[9]; Temp_Pixel[34] = Pixel[10]; Temp_Pixel[35] = Pixel[11]; 
+	Temp_Pixel[32] = Pixel[12]; Temp_Pixel[31] = Pixel[13]; Temp_Pixel[30] = Pixel[14];
+	Temp_Pixel[27] = Pixel[15]; Temp_Pixel[28] = Pixel[16]; Temp_Pixel[29] = Pixel[17];
+	
+	Temp_Pixel[9] = Pixel[18]; Temp_Pixel[12] = Pixel[19]; Temp_Pixel[15] = Pixel[20]; 
+	Temp_Pixel[16] = Pixel[21]; Temp_Pixel[13] = Pixel[22]; Temp_Pixel[10] = Pixel[23];
+	Temp_Pixel[11] = Pixel[24]; Temp_Pixel[14] = Pixel[25]; Temp_Pixel[17] = Pixel[26];
+	
+	Temp_Pixel[24] = Pixel[27]; Temp_Pixel[25] = Pixel[28]; Temp_Pixel[26] = Pixel[29]; 
+	Temp_Pixel[23] = Pixel[30]; Temp_Pixel[22] = Pixel[31]; Temp_Pixel[21] = Pixel[32];
+	Temp_Pixel[18] = Pixel[33]; Temp_Pixel[19] = Pixel[34]; Temp_Pixel[20] = Pixel[35];
+	
+	Temp_Pixel[36] = Pixel[36]; Temp_Pixel[39] = Pixel[37]; Temp_Pixel[42] = Pixel[38]; 
+	Temp_Pixel[43] = Pixel[39]; Temp_Pixel[40] = Pixel[40]; Temp_Pixel[37] = Pixel[41];
+	Temp_Pixel[38] = Pixel[42]; Temp_Pixel[41] = Pixel[43]; Temp_Pixel[44] = Pixel[44];
+	
+	Temp_Pixel[47] = Pixel[45]; Temp_Pixel[46] = Pixel[46]; Temp_Pixel[45] = Pixel[47]; 
+	Temp_Pixel[48] = Pixel[48]; Temp_Pixel[49] = Pixel[49]; Temp_Pixel[50] = Pixel[50];
+	Temp_Pixel[53] = Pixel[51]; Temp_Pixel[52] = Pixel[52]; Temp_Pixel[51] = Pixel[53];
+	
+}
+
+void fuzhi_b()
+{
+	Pixel[0] = Temp_Pixel[0]; Pixel[1] = Temp_Pixel[3]; Pixel[2] = Temp_Pixel[6]; 
+	Pixel[3] = Temp_Pixel[7]; Pixel[4] = Temp_Pixel[4]; Pixel[5] = Temp_Pixel[1];
+	Pixel[6] = Temp_Pixel[2]; Pixel[7] = Temp_Pixel[5]; Pixel[8] = Temp_Pixel[8];
+	
+	Pixel[9] = Temp_Pixel[33]; Pixel[10] = Temp_Pixel[34]; Pixel[11] = Temp_Pixel[35]; 
+	Pixel[12] = Temp_Pixel[32]; Pixel[13] = Temp_Pixel[31]; Pixel[14] = Temp_Pixel[30];
+	Pixel[15] = Temp_Pixel[27]; Pixel[16] = Temp_Pixel[28]; Pixel[17] = Temp_Pixel[29];
+	
+	Pixel[18] = Temp_Pixel[9]; Pixel[19] = Temp_Pixel[12]; Pixel[20] = Temp_Pixel[15]; 
+	Pixel[21] = Temp_Pixel[16]; Pixel[22] = Temp_Pixel[13]; Pixel[23] = Temp_Pixel[10];
+	Pixel[24] = Temp_Pixel[11]; Pixel[25] = Temp_Pixel[14]; Pixel[26] = Temp_Pixel[17];
+	
+	Pixel[27] = Temp_Pixel[24]; Pixel[28] = Temp_Pixel[25]; Pixel[29] = Temp_Pixel[26]; 
+	Pixel[30] = Temp_Pixel[23]; Pixel[31] = Temp_Pixel[22]; Pixel[32] = Temp_Pixel[21];
+	Pixel[33] = Temp_Pixel[18]; Pixel[34] = Temp_Pixel[19]; Pixel[35] = Temp_Pixel[20];
+	
+	Pixel[36] = Temp_Pixel[36]; Pixel[37] = Temp_Pixel[39]; Pixel[38] = Temp_Pixel[42]; 
+	Pixel[39] = Temp_Pixel[43]; Pixel[40] = Temp_Pixel[40]; Pixel[41] = Temp_Pixel[37];
+	Pixel[42] = Temp_Pixel[38]; Pixel[43] = Temp_Pixel[41]; Pixel[44] = Temp_Pixel[44];
+	
+	Pixel[45] = Temp_Pixel[47]; Pixel[46] = Temp_Pixel[46]; Pixel[47] = Temp_Pixel[45]; 
+	Pixel[48] = Temp_Pixel[48]; Pixel[49] = Temp_Pixel[49]; Pixel[50] = Temp_Pixel[50];
+	Pixel[51] = Temp_Pixel[53]; Pixel[52] = Temp_Pixel[52]; Pixel[53] = Temp_Pixel[51];
+	
+}
+
+
+void rotateCube()
+{
+
+	switch (val){    //根据串口发送的值来确定
+	case 0:                      //U
+		for (i = 0; i<3; i++){
+			t1 = arrayOut[0][0][0];
+			t2 = arrayOut[0][1][0];
+			t3 = arrayOut[0][2][0];
+			arrayOut[0][0][0] = arrayOut[0][0][2];
+			arrayOut[0][1][0] = arrayOut[0][0][1];
+			arrayOut[0][2][0] = arrayOut[0][0][0];
+
+			arrayOut[0][0][0] = arrayOut[0][0][2];
+			arrayOut[0][0][1] = arrayOut[0][1][2];
+			arrayOut[0][0][2] = arrayOut[0][2][2];
+
+			arrayOut[0][0][2] = arrayOut[0][2][2];
+			arrayOut[0][1][2] = arrayOut[0][2][1];
+			arrayOut[0][2][2] = arrayOut[0][2][0];
+
+			arrayOut[0][2][0] = t1;
+			arrayOut[0][2][1] = t2;
+			arrayOut[0][2][2] = t3;
+		}
+		for (i = 0; i<9; i++){
+			t1 = arrayOut[4][0][0];
+			arrayOut[4][0][0] = arrayOut[2][0][2];
+			arrayOut[2][0][2] = arrayOut[2][0][1];
+			arrayOut[2][0][1] = arrayOut[2][0][0];
+			arrayOut[2][0][0] = arrayOut[5][0][2];
+			arrayOut[5][0][2] = arrayOut[5][0][1];
+			arrayOut[5][0][1] = arrayOut[5][0][0];
+			arrayOut[5][0][0] = arrayOut[3][0][2];
+			arrayOut[3][0][2] = arrayOut[3][0][1];
+			arrayOut[3][0][1] = arrayOut[3][0][0];
+			arrayOut[3][0][0] = arrayOut[4][0][2];
+			arrayOut[4][0][2] = arrayOut[4][0][1];
+			arrayOut[4][0][1] = t1;
+		}
+
+		break;
+	case 1:                  //D
+		for (i = 0; i<3; i++){
+			t1 = arrayOut[1][0][0];
+			t2 = arrayOut[1][1][0];
+			t3 = arrayOut[1][2][0];
+			arrayOut[1][0][0] = arrayOut[1][0][2];
+			arrayOut[1][1][0] = arrayOut[1][0][1];
+			arrayOut[1][2][0] = arrayOut[1][0][0];
+
+			arrayOut[1][0][0] = arrayOut[1][0][2];
+			arrayOut[1][0][1] = arrayOut[1][1][2];
+			arrayOut[1][0][2] = arrayOut[1][2][2];
+
+			arrayOut[1][0][2] = arrayOut[1][2][2];
+			arrayOut[1][1][2] = arrayOut[1][2][1];
+			arrayOut[1][2][2] = arrayOut[1][2][0];
+
+			arrayOut[1][2][0] = t1;
+			arrayOut[1][2][1] = t2;
+			arrayOut[1][2][2] = t3;
+		}
+		for (i = 0; i<3; i++){
+			t1 = arrayOut[4][2][0];
+			arrayOut[4][2][0] = arrayOut[2][2][2];
+			arrayOut[2][2][2] = arrayOut[2][2][1];
+			arrayOut[2][2][1] = arrayOut[2][2][0];
+			arrayOut[2][2][0] = arrayOut[5][2][2];
+			arrayOut[5][2][2] = arrayOut[5][2][1];
+			arrayOut[5][2][1] = arrayOut[5][2][0];
+			arrayOut[5][2][0] = arrayOut[3][2][2];
+			arrayOut[3][2][2] = arrayOut[3][2][1];
+			arrayOut[3][2][1] = arrayOut[3][2][0];
+			arrayOut[3][2][0] = arrayOut[4][2][2];
+			arrayOut[4][2][2] = arrayOut[4][2][1];
+			arrayOut[4][2][1] = t1;
+		}
+
+		break;
+	case 2:                       //L
+		for (i = 0; i<3; i++){
+			t1 = arrayOut[2][0][0];
+			t2 = arrayOut[2][1][0];
+			t3 = arrayOut[2][2][0];
+			arrayOut[2][0][0] = arrayOut[2][0][2];
+			arrayOut[2][1][0] = arrayOut[2][0][1];
+			arrayOut[2][2][0] = arrayOut[2][0][0];
+
+			arrayOut[2][0][0] = arrayOut[2][0][2];
+			arrayOut[2][0][1] = arrayOut[2][1][2];
+			arrayOut[2][0][2] = arrayOut[2][2][2];
+
+			arrayOut[2][0][2] = arrayOut[2][2][2];
+			arrayOut[2][1][2] = arrayOut[2][2][1];
+			arrayOut[2][2][2] = arrayOut[2][2][0];
+
+			arrayOut[2][2][0] = t1;
+			arrayOut[2][2][1] = t2;
+			arrayOut[2][2][2] = t3;
+		}
+		for (i = 0; i<9; i++){
+			t1 = arrayOut[4][2][0];
+			arrayOut[4][2][0] = arrayOut[1][0][0];
+			arrayOut[1][0][0] = arrayOut[1][1][0];
+			arrayOut[1][1][0] = arrayOut[1][2][0];
+			arrayOut[1][2][0] = arrayOut[5][2][2];
+			arrayOut[5][2][2] = arrayOut[5][1][2];
+			arrayOut[5][1][2] = arrayOut[5][0][2];
+			arrayOut[5][0][2] = arrayOut[0][0][0];
+			arrayOut[0][0][0] = arrayOut[0][1][0];
+			arrayOut[0][1][0] = arrayOut[0][2][0];
+			arrayOut[0][2][0] = arrayOut[4][0][0];
+			arrayOut[4][0][0] = arrayOut[4][1][0];
+			arrayOut[4][1][0] = t1;
+		}
+
+		break;
+	case 3:                       //R
+		for (i = 0; i<3; i++){
+			t1 = arrayOut[3][0][0];
+			t2 = arrayOut[3][1][0];
+			t3 = arrayOut[3][2][0];
+			arrayOut[3][0][0] = arrayOut[3][0][2];
+			arrayOut[3][1][0] = arrayOut[3][0][1];
+			arrayOut[3][2][0] = arrayOut[3][0][0];
+
+			arrayOut[3][0][0] = arrayOut[3][0][2];
+			arrayOut[3][0][1] = arrayOut[3][1][2];
+			arrayOut[3][0][2] = arrayOut[3][2][2];
+
+			arrayOut[3][0][2] = arrayOut[3][2][2];
+			arrayOut[3][1][2] = arrayOut[3][2][1];
+			arrayOut[3][2][2] = arrayOut[3][2][0];
+
+			arrayOut[3][2][0] = t1;
+			arrayOut[3][2][1] = t2;
+			arrayOut[3][2][2] = t3;
+		}
+		for (i = 0; i<9; i++){
+			t1 = arrayOut[4][2][2];
+			arrayOut[4][2][2] = arrayOut[4][1][2];
+			arrayOut[4][1][2] = arrayOut[4][0][2];
+			arrayOut[4][0][2] = arrayOut[0][2][2];
+			arrayOut[0][2][2] = arrayOut[0][1][2];
+			arrayOut[0][1][2] = arrayOut[0][0][2];
+			arrayOut[0][0][2] = arrayOut[5][0][0];
+			arrayOut[5][0][0] = arrayOut[5][1][0];
+			arrayOut[5][1][0] = arrayOut[5][2][0];
+			arrayOut[5][2][0] = arrayOut[1][2][2];
+			arrayOut[1][2][2] = arrayOut[1][1][2];
+			arrayOut[1][1][2] = arrayOut[1][0][2];
+			arrayOut[1][0][2] = t1;
+		}
+
+		break;
+	case 4:                       //T
+		for (i = 0; i<3; i++){
+			t1 = arrayOut[4][0][0];
+			t2 = arrayOut[4][1][0];
+			t3 = arrayOut[4][2][0];
+			arrayOut[4][0][0] = arrayOut[4][0][2];
+			arrayOut[4][1][0] = arrayOut[4][0][1];
+			arrayOut[4][2][0] = arrayOut[4][0][0];
+
+			arrayOut[4][0][0] = arrayOut[4][0][2];
+			arrayOut[4][0][1] = arrayOut[4][1][2];
+			arrayOut[4][0][2] = arrayOut[4][2][2];
+
+			arrayOut[4][0][2] = arrayOut[4][2][2];
+			arrayOut[4][1][2] = arrayOut[4][2][1];
+			arrayOut[4][2][2] = arrayOut[4][2][0];
+
+			arrayOut[4][2][0] = t1;
+			arrayOut[4][2][1] = t2;
+			arrayOut[4][2][2] = t3;
+		}
+		for (i = 0; i<9; i++){
+			t1 = arrayOut[2][2][2];
+			arrayOut[2][2][2] = arrayOut[2][1][2];
+			arrayOut[2][1][2] = arrayOut[2][0][2];
+			arrayOut[2][0][2] = arrayOut[0][2][0];
+			arrayOut[0][2][0] = arrayOut[0][2][1];
+			arrayOut[0][2][1] = arrayOut[0][2][2];
+			arrayOut[0][2][2] = arrayOut[3][0][0];
+			arrayOut[3][0][0] = arrayOut[3][1][0];
+			arrayOut[3][1][0] = arrayOut[3][2][0];
+			arrayOut[3][2][0] = arrayOut[1][0][2];
+			arrayOut[1][0][2] = arrayOut[1][0][1];
+			arrayOut[1][0][1] = arrayOut[1][0][0];
+			arrayOut[1][0][0] = t1;
+		}
+
+		break;
+	case 5:                       //B
+		for (i = 0; i<3; i++){
+			t1 = arrayOut[5][0][0];
+			t2 = arrayOut[5][1][0];
+			t3 = arrayOut[5][2][0];
+			arrayOut[5][0][0] = arrayOut[5][0][2];
+			arrayOut[5][1][0] = arrayOut[5][0][1];
+			arrayOut[5][2][0] = arrayOut[5][0][0];
+
+			arrayOut[5][0][0] = arrayOut[5][0][2];
+			arrayOut[5][0][1] = arrayOut[5][1][2];
+			arrayOut[5][0][2] = arrayOut[5][2][2];
+
+			arrayOut[5][0][2] = arrayOut[5][2][2];
+			arrayOut[5][1][2] = arrayOut[5][2][1];
+			arrayOut[5][2][2] = arrayOut[5][2][0];
+
+			arrayOut[5][2][0] = t1;
+			arrayOut[5][2][1] = t2;
+			arrayOut[5][2][2] = t3;
+		}
+
+		for (i = 0; i<9; i++){
+			t1 = arrayOut[3][2][2];
+			arrayOut[3][2][2] = arrayOut[3][1][2];
+			arrayOut[3][1][2] = arrayOut[3][0][2];
+			arrayOut[3][0][2] = arrayOut[0][0][2];
+			arrayOut[0][0][2] = arrayOut[0][0][1];
+			arrayOut[0][0][1] = arrayOut[0][0][0];
+			arrayOut[0][0][0] = arrayOut[2][0][0];
+			arrayOut[2][0][0] = arrayOut[2][1][0];
+			arrayOut[2][1][0] = arrayOut[2][2][0];
+			arrayOut[2][2][0] = arrayOut[1][2][0];
+			arrayOut[1][2][0] = arrayOut[1][2][1];
+			arrayOut[1][2][1] = arrayOut[1][2][2];
+			arrayOut[1][2][2] = t1;
+		}
+
+		break;
+	case 6:                      //U'
+
+		t1 = arrayOut[0][0][0];
+		t2 = arrayOut[0][1][0];
+		t3 = arrayOut[0][2][0];
+		arrayOut[0][0][0] = arrayOut[0][0][2];
+		arrayOut[0][1][0] = arrayOut[0][0][1];
+		arrayOut[0][2][0] = arrayOut[0][0][0];
+
+		arrayOut[0][0][0] = arrayOut[0][0][2];
+		arrayOut[0][0][1] = arrayOut[0][1][2];
+		arrayOut[0][0][2] = arrayOut[0][2][2];
+
+		arrayOut[0][0][2] = arrayOut[0][2][2];
+		arrayOut[0][1][2] = arrayOut[0][2][1];
+		arrayOut[0][2][2] = arrayOut[0][2][0];
+
+		arrayOut[0][2][0] = t1;
+		arrayOut[0][2][1] = t2;
+		arrayOut[0][2][2] = t3;
+
+
+		for (i = 0; i<3; i++){
+			t1 = arrayOut[4][0][0];
+			arrayOut[4][0][0] = arrayOut[2][0][2];
+			arrayOut[2][0][2] = arrayOut[2][0][1];
+			arrayOut[2][0][1] = arrayOut[2][0][0];
+			arrayOut[2][0][0] = arrayOut[5][0][2];
+			arrayOut[5][0][2] = arrayOut[5][0][1];
+			arrayOut[5][0][1] = arrayOut[5][0][0];
+			arrayOut[5][0][0] = arrayOut[3][0][2];
+			arrayOut[3][0][2] = arrayOut[3][0][1];
+			arrayOut[3][0][1] = arrayOut[3][0][0];
+			arrayOut[3][0][0] = arrayOut[4][0][2];
+			arrayOut[4][0][2] = arrayOut[4][0][1];
+			arrayOut[4][0][1] = t1;
+		}
+
+		break;
+	case 7:                  //D'
+
+		t1 = arrayOut[1][0][0];
+		t2 = arrayOut[1][1][0];
+		t3 = arrayOut[1][2][0];
+		arrayOut[1][0][0] = arrayOut[1][0][2];
+		arrayOut[1][1][0] = arrayOut[1][0][1];
+		arrayOut[1][2][0] = arrayOut[1][0][0];
+
+		arrayOut[1][0][0] = arrayOut[1][0][2];
+		arrayOut[1][0][1] = arrayOut[1][1][2];
+		arrayOut[1][0][2] = arrayOut[1][2][2];
+
+		arrayOut[1][0][2] = arrayOut[1][2][2];
+		arrayOut[1][1][2] = arrayOut[1][2][1];
+		arrayOut[1][2][2] = arrayOut[1][2][0];
+
+		arrayOut[1][2][0] = t1;
+		arrayOut[1][2][1] = t2;
+		arrayOut[1][2][2] = t3;
+		for (i = 0; i<9; i++){
+			t1 = arrayOut[4][2][0];
+			arrayOut[4][2][0] = arrayOut[2][2][2];
+			arrayOut[2][2][2] = arrayOut[2][2][1];
+			arrayOut[2][2][1] = arrayOut[2][2][0];
+			arrayOut[2][2][0] = arrayOut[5][2][2];
+			arrayOut[5][2][2] = arrayOut[5][2][1];
+			arrayOut[5][2][1] = arrayOut[5][2][0];
+			arrayOut[5][2][0] = arrayOut[3][2][2];
+			arrayOut[3][2][2] = arrayOut[3][2][1];
+			arrayOut[3][2][1] = arrayOut[3][2][0];
+			arrayOut[3][2][0] = arrayOut[4][2][2];
+			arrayOut[4][2][2] = arrayOut[4][2][1];
+			arrayOut[4][2][1] = t1;
+		}
+
+		break;
+	case 8:                       //L'
+
+		t1 = arrayOut[2][0][0];
+		t2 = arrayOut[2][1][0];
+		t3 = arrayOut[2][2][0];
+		arrayOut[2][0][0] = arrayOut[2][0][2];
+		arrayOut[2][1][0] = arrayOut[2][0][1];
+		arrayOut[2][2][0] = arrayOut[2][0][0];
+
+		arrayOut[2][0][0] = arrayOut[2][0][2];
+		arrayOut[2][0][1] = arrayOut[2][1][2];
+		arrayOut[2][0][2] = arrayOut[2][2][2];
+
+		arrayOut[2][0][2] = arrayOut[2][2][2];
+		arrayOut[2][1][2] = arrayOut[2][2][1];
+		arrayOut[2][2][2] = arrayOut[2][2][0];
+
+		arrayOut[2][2][0] = t1;
+		arrayOut[2][2][1] = t2;
+		arrayOut[2][2][2] = t3;
+		for (i = 0; i<3; i++){
+			t1 = arrayOut[4][2][0];
+			arrayOut[4][2][0] = arrayOut[1][0][0];
+			arrayOut[1][0][0] = arrayOut[1][1][0];
+			arrayOut[1][1][0] = arrayOut[1][2][0];
+			arrayOut[1][2][0] = arrayOut[5][2][2];
+			arrayOut[5][2][2] = arrayOut[5][1][2];
+			arrayOut[5][1][2] = arrayOut[5][0][2];
+			arrayOut[5][0][2] = arrayOut[0][0][0];
+			arrayOut[0][0][0] = arrayOut[0][1][0];
+			arrayOut[0][1][0] = arrayOut[0][2][0];
+			arrayOut[0][2][0] = arrayOut[4][0][0];
+			arrayOut[4][0][0] = arrayOut[4][1][0];
+			arrayOut[4][1][0] = t1;
+		}
+
+		break;
+	case 9:                       //R'
+
+		t1 = arrayOut[3][0][0];
+		t2 = arrayOut[3][1][0];
+		t3 = arrayOut[3][2][0];
+		arrayOut[3][0][0] = arrayOut[3][0][2];
+		arrayOut[3][1][0] = arrayOut[3][0][1];
+		arrayOut[3][2][0] = arrayOut[3][0][0];
+
+		arrayOut[3][0][0] = arrayOut[3][0][2];
+		arrayOut[3][0][1] = arrayOut[3][1][2];
+		arrayOut[3][0][2] = arrayOut[3][2][2];
+
+		arrayOut[3][0][2] = arrayOut[3][2][2];
+		arrayOut[3][1][2] = arrayOut[3][2][1];
+		arrayOut[3][2][2] = arrayOut[3][2][0];
+
+		arrayOut[3][2][0] = t1;
+		arrayOut[3][2][1] = t2;
+		arrayOut[3][2][2] = t3;
+		for (i = 0; i<3; i++){
+			t1 = arrayOut[4][2][2];
+			arrayOut[4][2][2] = arrayOut[4][1][2];
+			arrayOut[4][1][2] = arrayOut[4][0][2];
+			arrayOut[4][0][2] = arrayOut[0][2][2];
+			arrayOut[0][2][2] = arrayOut[0][1][2];
+			arrayOut[0][1][2] = arrayOut[0][0][2];
+			arrayOut[0][0][2] = arrayOut[5][0][0];
+			arrayOut[5][0][0] = arrayOut[5][1][0];
+			arrayOut[5][1][0] = arrayOut[5][2][0];
+			arrayOut[5][2][0] = arrayOut[1][2][2];
+			arrayOut[1][2][2] = arrayOut[1][1][2];
+			arrayOut[1][1][2] = arrayOut[1][0][2];
+			arrayOut[1][0][2] = t1;
+		}
+
+		break;
+	case 10:                       //T'
+
+		t1 = arrayOut[4][0][0];
+		t2 = arrayOut[4][1][0];
+		t3 = arrayOut[4][2][0];
+		arrayOut[4][0][0] = arrayOut[4][0][2];
+		arrayOut[4][1][0] = arrayOut[4][0][1];
+		arrayOut[4][2][0] = arrayOut[4][0][0];
+
+		arrayOut[4][0][0] = arrayOut[4][0][2];
+		arrayOut[4][0][1] = arrayOut[4][1][2];
+		arrayOut[4][0][2] = arrayOut[4][2][2];
+
+		arrayOut[4][0][2] = arrayOut[4][2][2];
+		arrayOut[4][1][2] = arrayOut[4][2][1];
+		arrayOut[4][2][2] = arrayOut[4][2][0];
+
+		arrayOut[4][2][0] = t1;
+		arrayOut[4][2][1] = t2;
+		arrayOut[4][2][2] = t3;
+		for (i = 0; i<3; i++){
+			t1 = arrayOut[2][2][2];
+			arrayOut[2][2][2] = arrayOut[2][1][2];
+			arrayOut[2][1][2] = arrayOut[2][0][2];
+			arrayOut[2][0][2] = arrayOut[0][2][0];
+			arrayOut[0][2][0] = arrayOut[0][2][1];
+			arrayOut[0][2][1] = arrayOut[0][2][2];
+			arrayOut[0][2][2] = arrayOut[3][0][0];
+			arrayOut[3][0][0] = arrayOut[3][1][0];
+			arrayOut[3][1][0] = arrayOut[3][2][0];
+			arrayOut[3][2][0] = arrayOut[1][0][2];
+			arrayOut[1][0][2] = arrayOut[1][0][1];
+			arrayOut[1][0][1] = arrayOut[1][0][0];
+			arrayOut[1][0][0] = t1;
+		}
+
+		break;
+	case 11:                       //B'
+
+		t1 = arrayOut[5][0][0];
+		t2 = arrayOut[5][1][0];
+		t3 = arrayOut[5][2][0];
+		arrayOut[5][0][0] = arrayOut[5][0][2];
+		arrayOut[5][1][0] = arrayOut[5][0][1];
+		arrayOut[5][2][0] = arrayOut[5][0][0];
+
+		arrayOut[5][0][0] = arrayOut[5][0][2];
+		arrayOut[5][0][1] = arrayOut[5][1][2];
+		arrayOut[5][0][2] = arrayOut[5][2][2];
+
+		arrayOut[5][0][2] = arrayOut[5][2][2];
+		arrayOut[5][1][2] = arrayOut[5][2][1];
+		arrayOut[5][2][2] = arrayOut[5][2][0];
+
+		arrayOut[5][2][0] = t1;
+		arrayOut[5][2][1] = t2;
+		arrayOut[5][2][2] = t3;
+		for (i = 0; i<3; i++){
+			t1 = arrayOut[3][2][2];
+			arrayOut[3][2][2] = arrayOut[3][1][2];
+			arrayOut[3][1][2] = arrayOut[3][0][2];
+			arrayOut[3][0][2] = arrayOut[0][0][2];
+			arrayOut[0][0][2] = arrayOut[0][0][1];
+			arrayOut[0][0][1] = arrayOut[0][0][0];
+			arrayOut[0][0][0] = arrayOut[2][0][0];
+			arrayOut[2][0][0] = arrayOut[2][1][0];
+			arrayOut[2][1][0] = arrayOut[2][2][0];
+			arrayOut[2][2][0] = arrayOut[1][2][0];
+			arrayOut[1][2][0] = arrayOut[1][2][1];
+			arrayOut[1][2][1] = arrayOut[1][2][2];
+			arrayOut[1][2][2] = t1;
+		}
+
+		break;
+	case 12:                      //U2
+		for (i = 0; i<2; i++){
+			t1 = arrayOut[0][0][0];
+			t2 = arrayOut[0][1][0];
+			t3 = arrayOut[0][2][0];
+			arrayOut[0][0][0] = arrayOut[0][0][2];
+			arrayOut[0][1][0] = arrayOut[0][0][1];
+			arrayOut[0][2][0] = arrayOut[0][0][0];
+
+			arrayOut[0][0][0] = arrayOut[0][0][2];
+			arrayOut[0][0][1] = arrayOut[0][1][2];
+			arrayOut[0][0][2] = arrayOut[0][2][2];
+
+			arrayOut[0][0][2] = arrayOut[0][2][2];
+			arrayOut[0][1][2] = arrayOut[0][2][1];
+			arrayOut[0][2][2] = arrayOut[0][2][0];
+
+			arrayOut[0][2][0] = t1;
+			arrayOut[0][2][1] = t2;
+			arrayOut[0][2][2] = t3;
+		}
+		for (i = 0; i<6; i++){
+			t1 = arrayOut[4][0][0];
+			arrayOut[4][0][0] = arrayOut[2][0][2];
+			arrayOut[2][0][2] = arrayOut[2][0][1];
+			arrayOut[2][0][1] = arrayOut[2][0][0];
+			arrayOut[2][0][0] = arrayOut[5][0][2];
+			arrayOut[5][0][2] = arrayOut[5][0][1];
+			arrayOut[5][0][1] = arrayOut[5][0][0];
+			arrayOut[5][0][0] = arrayOut[3][0][2];
+			arrayOut[3][0][2] = arrayOut[3][0][1];
+			arrayOut[3][0][1] = arrayOut[3][0][0];
+			arrayOut[3][0][0] = arrayOut[4][0][2];
+			arrayOut[4][0][2] = arrayOut[4][0][1];
+			arrayOut[4][0][1] = t1;
+		}
+
+		break;
+	case 13:                  //D2
+		for (i = 0; i<2; i++){
+			t1 = arrayOut[1][0][0];
+			t2 = arrayOut[1][1][0];
+			t3 = arrayOut[1][2][0];
+			arrayOut[1][0][0] = arrayOut[1][0][2];
+			arrayOut[1][1][0] = arrayOut[1][0][1];
+			arrayOut[1][2][0] = arrayOut[1][0][0];
+
+			arrayOut[1][0][0] = arrayOut[1][0][2];
+			arrayOut[1][0][1] = arrayOut[1][1][2];
+			arrayOut[1][0][2] = arrayOut[1][2][2];
+
+			arrayOut[1][0][2] = arrayOut[1][2][2];
+			arrayOut[1][1][2] = arrayOut[1][2][1];
+			arrayOut[1][2][2] = arrayOut[1][2][0];
+
+			arrayOut[1][2][0] = t1;
+			arrayOut[1][2][1] = t2;
+			arrayOut[1][2][2] = t3;
+		}
+		for (i = 0; i<6; i++){
+			t1 = arrayOut[4][2][0];
+			arrayOut[4][2][0] = arrayOut[2][2][2];
+			arrayOut[2][2][2] = arrayOut[2][2][1];
+			arrayOut[2][2][1] = arrayOut[2][2][0];
+			arrayOut[2][2][0] = arrayOut[5][2][2];
+			arrayOut[5][2][2] = arrayOut[5][2][1];
+			arrayOut[5][2][1] = arrayOut[5][2][0];
+			arrayOut[5][2][0] = arrayOut[3][2][2];
+			arrayOut[3][2][2] = arrayOut[3][2][1];
+			arrayOut[3][2][1] = arrayOut[3][2][0];
+			arrayOut[3][2][0] = arrayOut[4][2][2];
+			arrayOut[4][2][2] = arrayOut[4][2][1];
+			arrayOut[4][2][1] = t1;
+		}
+
+		break;
+	case 14:                       //L2
+		for (i = 0; i<2; i++){
+			t1 = arrayOut[2][0][0];
+			t2 = arrayOut[2][1][0];
+			t3 = arrayOut[2][2][0];
+			arrayOut[2][0][0] = arrayOut[2][0][2];
+			arrayOut[2][1][0] = arrayOut[2][0][1];
+			arrayOut[2][2][0] = arrayOut[2][0][0];
+
+			arrayOut[2][0][0] = arrayOut[2][0][2];
+			arrayOut[2][0][1] = arrayOut[2][1][2];
+			arrayOut[2][0][2] = arrayOut[2][2][2];
+
+			arrayOut[2][0][2] = arrayOut[2][2][2];
+			arrayOut[2][1][2] = arrayOut[2][2][1];
+			arrayOut[2][2][2] = arrayOut[2][2][0];
+
+			arrayOut[2][2][0] = t1;
+			arrayOut[2][2][1] = t2;
+			arrayOut[2][2][2] = t3;
+		}
+		for (i = 0; i<6; i++){
+			t1 = arrayOut[4][2][0];
+			arrayOut[4][2][0] = arrayOut[1][0][0];
+			arrayOut[1][0][0] = arrayOut[1][1][0];
+			arrayOut[1][1][0] = arrayOut[1][2][0];
+			arrayOut[1][2][0] = arrayOut[5][2][2];
+			arrayOut[5][2][2] = arrayOut[5][1][2];
+			arrayOut[5][1][2] = arrayOut[5][0][2];
+			arrayOut[5][0][2] = arrayOut[0][0][0];
+			arrayOut[0][0][0] = arrayOut[0][1][0];
+			arrayOut[0][1][0] = arrayOut[0][2][0];
+			arrayOut[0][2][0] = arrayOut[4][0][0];
+			arrayOut[4][0][0] = arrayOut[4][1][0];
+			arrayOut[4][1][0] = t1;
+		}
+
+		break;
+	case 15:                       //R2
+		for (i = 0; i<2; i++){
+			t1 = arrayOut[3][0][0];
+			t2 = arrayOut[3][1][0];
+			t3 = arrayOut[3][2][0];
+			arrayOut[3][0][0] = arrayOut[3][0][2];
+			arrayOut[3][1][0] = arrayOut[3][0][1];
+			arrayOut[3][2][0] = arrayOut[3][0][0];
+
+			arrayOut[3][0][0] = arrayOut[3][0][2];
+			arrayOut[3][0][1] = arrayOut[3][1][2];
+			arrayOut[3][0][2] = arrayOut[3][2][2];
+
+			arrayOut[3][0][2] = arrayOut[3][2][2];
+			arrayOut[3][1][2] = arrayOut[3][2][1];
+			arrayOut[3][2][2] = arrayOut[3][2][0];
+
+			arrayOut[3][2][0] = t1;
+			arrayOut[3][2][1] = t2;
+			arrayOut[3][2][2] = t3;
+		}
+		for (i = 0; i<6; i++){
+			t1 = arrayOut[4][2][2];
+			arrayOut[4][2][2] = arrayOut[4][1][2];
+			arrayOut[4][1][2] = arrayOut[4][0][2];
+			arrayOut[4][0][2] = arrayOut[0][2][2];
+			arrayOut[0][2][2] = arrayOut[0][1][2];
+			arrayOut[0][1][2] = arrayOut[0][0][2];
+			arrayOut[0][0][2] = arrayOut[5][0][0];
+			arrayOut[5][0][0] = arrayOut[5][1][0];
+			arrayOut[5][1][0] = arrayOut[5][2][0];
+			arrayOut[5][2][0] = arrayOut[1][2][2];
+			arrayOut[1][2][2] = arrayOut[1][1][2];
+			arrayOut[1][1][2] = arrayOut[1][0][2];
+			arrayOut[1][0][2] = t1;
+		}
+
+		break;
+	case 16:                       //T2
+		for (i = 0; i<2; i++){
+			t1 = arrayOut[4][0][0];
+			t2 = arrayOut[4][1][0];
+			t3 = arrayOut[4][2][0];
+			arrayOut[4][0][0] = arrayOut[4][0][2];
+			arrayOut[4][1][0] = arrayOut[4][0][1];
+			arrayOut[4][2][0] = arrayOut[4][0][0];
+
+			arrayOut[4][0][0] = arrayOut[4][0][2];
+			arrayOut[4][0][1] = arrayOut[4][1][2];
+			arrayOut[4][0][2] = arrayOut[4][2][2];
+
+			arrayOut[4][0][2] = arrayOut[4][2][2];
+			arrayOut[4][1][2] = arrayOut[4][2][1];
+			arrayOut[4][2][2] = arrayOut[4][2][0];
+
+			arrayOut[4][2][0] = t1;
+			arrayOut[4][2][1] = t2;
+			arrayOut[4][2][2] = t3;
+		}
+		for (i = 0; i<6; i++){
+			t1 = arrayOut[2][2][2];
+			arrayOut[2][2][2] = arrayOut[2][1][2];
+			arrayOut[2][1][2] = arrayOut[2][0][2];
+			arrayOut[2][0][2] = arrayOut[0][2][0];
+			arrayOut[0][2][0] = arrayOut[0][2][1];
+			arrayOut[0][2][1] = arrayOut[0][2][2];
+			arrayOut[0][2][2] = arrayOut[3][0][0];
+			arrayOut[3][0][0] = arrayOut[3][1][0];
+			arrayOut[3][1][0] = arrayOut[3][2][0]; 
+			arrayOut[3][2][0] = arrayOut[1][0][2];
+			arrayOut[1][0][2] = arrayOut[1][0][1];
+			arrayOut[1][0][1] = arrayOut[1][0][0];
+			arrayOut[1][0][0] = t1;
+		}
+
+		break;
+	case 17:                       //B2
+		for (i = 0; i<2; i++){
+			t1 = arrayOut[5][0][0];
+			t2 = arrayOut[5][1][0];
+			t3 = arrayOut[5][2][0];
+			arrayOut[5][0][0] = arrayOut[5][0][2];
+			arrayOut[5][1][0] = arrayOut[5][0][1];
+			arrayOut[5][2][0] = arrayOut[5][0][0];
+
+			arrayOut[5][0][0] = arrayOut[5][0][2];
+			arrayOut[5][0][1] = arrayOut[5][1][2];
+			arrayOut[5][0][2] = arrayOut[5][2][2];
+
+			arrayOut[5][0][2] = arrayOut[5][2][2];
+			arrayOut[5][1][2] = arrayOut[5][2][1];
+			arrayOut[5][2][2] = arrayOut[5][2][0];
+
+			arrayOut[5][2][0] = t1;
+			arrayOut[5][2][1] = t2;
+			arrayOut[5][2][2] = t3;
+		}
+		for (i = 0; i<6; i++){
+			t1 = arrayOut[3][2][2];
+			arrayOut[3][2][2] = arrayOut[3][1][2];
+			arrayOut[3][1][2] = arrayOut[3][0][2];
+			arrayOut[3][0][2] = arrayOut[0][0][2];
+			arrayOut[0][0][2] = arrayOut[0][0][1];
+			arrayOut[0][0][1] = arrayOut[0][0][0];
+			arrayOut[0][0][0] = arrayOut[2][0][0];
+			arrayOut[2][0][0] = arrayOut[2][1][0];
+			arrayOut[2][1][0] = arrayOut[2][2][0];
+			arrayOut[2][2][0] = arrayOut[1][2][0];
+			arrayOut[1][2][0] = arrayOut[1][2][1];
+			arrayOut[1][2][1] = arrayOut[1][2][2];
+			arrayOut[1][2][2] = t1;
+		}
+
+		break;
+	case 22:                      //MF
+		for (i = 0; i<3; i++){
+			t1 = arrayOut[0][1][2];
+			arrayOut[0][1][2] = arrayOut[0][1][1];
+			arrayOut[0][1][1] = arrayOut[0][1][0];
+			arrayOut[0][1][0] = arrayOut[2][0][1];
+			arrayOut[2][0][1] = arrayOut[2][1][1];
+			arrayOut[2][1][1] = arrayOut[2][2][1];
+			arrayOut[2][2][1] = arrayOut[1][1][0];
+			arrayOut[1][1][0] = arrayOut[1][1][1];
+			arrayOut[1][1][1] = arrayOut[1][1][2];
+			arrayOut[1][1][2] = arrayOut[3][2][1];
+			arrayOut[3][2][1] = arrayOut[3][1][1];
+			arrayOut[3][1][1] = arrayOut[3][0][1];
+			arrayOut[3][0][1] = t1;
+		}
+
+		break;
+	case 23:                      //MF'
+		for (i = 0; i<9; i++){
+			t1 = arrayOut[0][1][2];
+			arrayOut[0][1][2] = arrayOut[0][1][1];
+			arrayOut[0][1][1] = arrayOut[0][1][0];
+			arrayOut[0][1][0] = arrayOut[2][0][1];
+			arrayOut[2][0][1] = arrayOut[2][1][1];
+			arrayOut[2][1][1] = arrayOut[2][2][1];
+			arrayOut[2][2][1] = arrayOut[1][1][0];
+			arrayOut[1][1][0] = arrayOut[1][1][1];
+			arrayOut[1][1][1] = arrayOut[1][1][2];
+			arrayOut[1][1][2] = arrayOut[3][2][1];
+			arrayOut[3][2][1] = arrayOut[3][1][1];
+			arrayOut[3][1][1] = arrayOut[3][0][1];
+			arrayOut[3][0][1] = t1;
+		}
+
+		break;
+	case 24:                      //向上翻^
+         for(i=0;i<3;i++)
+         {
+		t1 = arrayOut[3][0][0];
+		t2 = arrayOut[3][1][0];
+		t3 = arrayOut[3][2][0];
+		arrayOut[3][0][0] = arrayOut[3][0][2];
+		arrayOut[3][1][0] = arrayOut[3][0][1];
+		arrayOut[3][2][0] = arrayOut[3][0][0];
+
+		arrayOut[3][0][0] = arrayOut[3][0][2];
+		arrayOut[3][0][1] = arrayOut[3][1][2];
+		arrayOut[3][0][2] = arrayOut[3][2][2];
+
+		arrayOut[3][0][2] = arrayOut[3][2][2];
+		arrayOut[3][1][2] = arrayOut[3][2][1];
+		arrayOut[3][2][2] = arrayOut[3][2][0];
+
+		arrayOut[3][2][0] = t1;
+		arrayOut[3][2][1] = t2;
+		arrayOut[3][2][2] = t3;
+		for (i = 0; i<3; i++){
+			t1 = arrayOut[4][2][2];
+			arrayOut[4][2][2] = arrayOut[4][1][2];
+			arrayOut[4][1][2] = arrayOut[4][0][2];
+			arrayOut[4][0][2] = arrayOut[0][2][2];
+			arrayOut[0][2][2] = arrayOut[0][1][2];
+			arrayOut[0][1][2] = arrayOut[0][0][2];
+			arrayOut[0][0][2] = arrayOut[5][0][0];
+			arrayOut[5][0][0] = arrayOut[5][1][0];
+			arrayOut[5][1][0] = arrayOut[5][2][0];
+			arrayOut[5][2][0] = arrayOut[1][2][2];
+			arrayOut[1][2][2] = arrayOut[1][1][2];
+			arrayOut[1][1][2] = arrayOut[1][0][2];
+			arrayOut[1][0][2] = t1;
+		}
+
+		for (i = 0; i<3; i++){
+			t1 = arrayOut[2][0][0];
+			t2 = arrayOut[2][1][0];
+			t3 = arrayOut[2][2][0];
+			arrayOut[2][0][0] = arrayOut[2][0][2];
+			arrayOut[2][1][0] = arrayOut[2][0][1];
+			arrayOut[2][2][0] = arrayOut[2][0][0];
+
+			arrayOut[2][0][0] = arrayOut[2][0][2];
+			arrayOut[2][0][1] = arrayOut[2][1][2];
+			arrayOut[2][0][2] = arrayOut[2][2][2];
+
+			arrayOut[2][0][2] = arrayOut[2][2][2];
+			arrayOut[2][1][2] = arrayOut[2][2][1];
+			arrayOut[2][2][2] = arrayOut[2][2][0];
+
+			arrayOut[2][2][0] = t1;
+			arrayOut[2][2][1] = t2;
+			arrayOut[2][2][2] = t3;
+		}
+
+		for (i = 0; i<9; i++){
+			t1 = arrayOut[4][2][0];
+			arrayOut[4][2][0] = arrayOut[1][0][0];
+			arrayOut[1][0][0] = arrayOut[1][1][0];
+			arrayOut[1][1][0] = arrayOut[1][2][0];
+			arrayOut[1][2][0] = arrayOut[5][2][2];
+			arrayOut[5][2][2] = arrayOut[5][1][2];
+			arrayOut[5][1][2] = arrayOut[5][0][2];
+			arrayOut[5][0][2] = arrayOut[0][0][0];
+			arrayOut[0][0][0] = arrayOut[0][1][0];
+			arrayOut[0][1][0] = arrayOut[0][2][0];
+			arrayOut[0][2][0] = arrayOut[4][0][0];
+			arrayOut[4][0][0] = arrayOut[4][1][0];
+			arrayOut[4][1][0] = t1;
+		}
+		for (i = 0; i<3; i++){
+			t1 = arrayOut[0][2][1];
+			arrayOut[0][2][1] = arrayOut[0][1][1];
+			arrayOut[0][1][1] = arrayOut[0][0][1];
+			arrayOut[0][0][1] = arrayOut[5][0][1];
+			arrayOut[5][0][1] = arrayOut[5][1][1];
+			arrayOut[5][1][1] = arrayOut[5][2][1];
+			arrayOut[5][2][1] = arrayOut[1][2][1];
+			arrayOut[1][2][1] = arrayOut[1][1][1];
+			arrayOut[1][1][1] = arrayOut[1][0][1];
+			arrayOut[1][0][1] = arrayOut[4][2][1];
+			arrayOut[4][2][1] = arrayOut[4][1][1];
+			arrayOut[4][1][1] = arrayOut[4][0][1];
+			arrayOut[4][0][1] = t1;
+		}
+         }
+
+		break;
+	case 25:                      //向下翻v
+                t1 = arrayOut[3][0][0];
+		t2 = arrayOut[3][1][0];
+		t3 = arrayOut[3][2][0];
+		arrayOut[3][0][0] = arrayOut[3][0][2];
+		arrayOut[3][1][0] = arrayOut[3][0][1];
+		arrayOut[3][2][0] = arrayOut[3][0][0];
+
+		arrayOut[3][0][0] = arrayOut[3][0][2];
+		arrayOut[3][0][1] = arrayOut[3][1][2];
+		arrayOut[3][0][2] = arrayOut[3][2][2];
+
+		arrayOut[3][0][2] = arrayOut[3][2][2];
+		arrayOut[3][1][2] = arrayOut[3][2][1];
+		arrayOut[3][2][2] = arrayOut[3][2][0];
+
+		arrayOut[3][2][0] = t1;
+		arrayOut[3][2][1] = t2;
+		arrayOut[3][2][2] = t3;
+		for (i = 0; i<3; i++){
+			t1 = arrayOut[4][2][2];
+			arrayOut[4][2][2] = arrayOut[4][1][2];
+			arrayOut[4][1][2] = arrayOut[4][0][2];
+			arrayOut[4][0][2] = arrayOut[0][2][2];
+			arrayOut[0][2][2] = arrayOut[0][1][2];
+			arrayOut[0][1][2] = arrayOut[0][0][2];
+			arrayOut[0][0][2] = arrayOut[5][0][0];
+			arrayOut[5][0][0] = arrayOut[5][1][0];
+			arrayOut[5][1][0] = arrayOut[5][2][0];
+			arrayOut[5][2][0] = arrayOut[1][2][2];
+			arrayOut[1][2][2] = arrayOut[1][1][2];
+			arrayOut[1][1][2] = arrayOut[1][0][2];
+			arrayOut[1][0][2] = t1;
+		}
+
+		for (i = 0; i<3; i++){
+			t1 = arrayOut[2][0][0];
+			t2 = arrayOut[2][1][0];
+			t3 = arrayOut[2][2][0];
+			arrayOut[2][0][0] = arrayOut[2][0][2];
+			arrayOut[2][1][0] = arrayOut[2][0][1];
+			arrayOut[2][2][0] = arrayOut[2][0][0];
+
+			arrayOut[2][0][0] = arrayOut[2][0][2];
+			arrayOut[2][0][1] = arrayOut[2][1][2];
+			arrayOut[2][0][2] = arrayOut[2][2][2];
+
+			arrayOut[2][0][2] = arrayOut[2][2][2];
+			arrayOut[2][1][2] = arrayOut[2][2][1];
+			arrayOut[2][2][2] = arrayOut[2][2][0];
+
+			arrayOut[2][2][0] = t1;
+			arrayOut[2][2][1] = t2;
+			arrayOut[2][2][2] = t3;
+		}
+
+		for (i = 0; i<9; i++){
+			t1 = arrayOut[4][2][0];
+			arrayOut[4][2][0] = arrayOut[1][0][0];
+			arrayOut[1][0][0] = arrayOut[1][1][0];
+			arrayOut[1][1][0] = arrayOut[1][2][0];
+			arrayOut[1][2][0] = arrayOut[5][2][2];
+			arrayOut[5][2][2] = arrayOut[5][1][2];
+			arrayOut[5][1][2] = arrayOut[5][0][2];
+			arrayOut[5][0][2] = arrayOut[0][0][0];
+			arrayOut[0][0][0] = arrayOut[0][1][0];
+			arrayOut[0][1][0] = arrayOut[0][2][0];
+			arrayOut[0][2][0] = arrayOut[4][0][0];
+			arrayOut[4][0][0] = arrayOut[4][1][0];
+			arrayOut[4][1][0] = t1;
+		}
+		for (i = 0; i<3; i++){
+			t1 = arrayOut[0][2][1];
+			arrayOut[0][2][1] = arrayOut[0][1][1];
+			arrayOut[0][1][1] = arrayOut[0][0][1];
+			arrayOut[0][0][1] = arrayOut[5][0][1];
+			arrayOut[5][0][1] = arrayOut[5][1][1];
+			arrayOut[5][1][1] = arrayOut[5][2][1];
+			arrayOut[5][2][1] = arrayOut[1][2][1];
+			arrayOut[1][2][1] = arrayOut[1][1][1];
+			arrayOut[1][1][1] = arrayOut[1][0][1];
+			arrayOut[1][0][1] = arrayOut[4][2][1];
+			arrayOut[4][2][1] = arrayOut[4][1][1];
+			arrayOut[4][1][1] = arrayOut[4][0][1];
+			arrayOut[4][0][1] = t1;
+		}
+
+
+		break;
+	case 26:                      //向左翻<
+		t1 = arrayOut[1][0][0];
+		t2 = arrayOut[1][1][0];
+		t3 = arrayOut[1][2][0];
+		arrayOut[1][0][0] = arrayOut[1][0][2];
+		arrayOut[1][1][0] = arrayOut[1][0][1];
+		arrayOut[1][2][0] = arrayOut[1][0][0];
+
+		arrayOut[1][0][0] = arrayOut[1][0][2];
+		arrayOut[1][0][1] = arrayOut[1][1][2];
+		arrayOut[1][0][2] = arrayOut[1][2][2];
+
+		arrayOut[1][0][2] = arrayOut[1][2][2];
+		arrayOut[1][1][2] = arrayOut[1][2][1];
+		arrayOut[1][2][2] = arrayOut[1][2][0];
+
+		arrayOut[1][2][0] = t1;
+		arrayOut[1][2][1] = t2;
+		arrayOut[1][2][2] = t3;
+		for (i = 0; i<9; i++){
+			t1 = arrayOut[4][2][0];
+			arrayOut[4][2][0] = arrayOut[2][2][2];
+			arrayOut[2][2][2] = arrayOut[2][2][1];
+			arrayOut[2][2][1] = arrayOut[2][2][0];
+			arrayOut[2][2][0] = arrayOut[5][2][2];
+			arrayOut[5][2][2] = arrayOut[5][2][1];
+			arrayOut[5][2][1] = arrayOut[5][2][0];
+			arrayOut[5][2][0] = arrayOut[3][2][2];
+			arrayOut[3][2][2] = arrayOut[3][2][1];
+			arrayOut[3][2][1] = arrayOut[3][2][0];
+			arrayOut[3][2][0] = arrayOut[4][2][2];
+			arrayOut[4][2][2] = arrayOut[4][2][1];
+			arrayOut[4][2][1] = t1;
+		}
+		for (i = 0; i<9; i++){
+			t1 = arrayOut[4][1][0];
+			arrayOut[4][1][0] = arrayOut[2][1][2];
+			arrayOut[2][1][2] = arrayOut[2][1][1];
+			arrayOut[2][1][1] = arrayOut[2][1][0];
+			arrayOut[2][1][0] = arrayOut[5][1][2];
+			arrayOut[5][1][2] = arrayOut[5][1][1];
+			arrayOut[5][1][1] = arrayOut[5][1][0];
+			arrayOut[5][1][0] = arrayOut[3][1][2];
+			arrayOut[3][1][2] = arrayOut[3][1][1];
+			arrayOut[3][1][1] = arrayOut[3][1][0];
+			arrayOut[3][1][0] = arrayOut[4][1][2];
+			arrayOut[4][1][2] = arrayOut[4][1][1];
+			arrayOut[4][1][1] = t1;
+		}
+                    for (i = 0; i<3; i++){
+			t1 = arrayOut[0][0][0];
+			t2 = arrayOut[0][1][0];
+			t3 = arrayOut[0][2][0];
+			arrayOut[0][0][0] = arrayOut[0][0][2];
+			arrayOut[0][1][0] = arrayOut[0][0][1];
+			arrayOut[0][2][0] = arrayOut[0][0][0];
+
+			arrayOut[0][0][0] = arrayOut[0][0][2];
+			arrayOut[0][0][1] = arrayOut[0][1][2];
+			arrayOut[0][0][2] = arrayOut[0][2][2];
+
+			arrayOut[0][0][2] = arrayOut[0][2][2];
+			arrayOut[0][1][2] = arrayOut[0][2][1];
+			arrayOut[0][2][2] = arrayOut[0][2][0];
+
+			arrayOut[0][2][0] = t1;
+			arrayOut[0][2][1] = t2;
+			arrayOut[0][2][2] = t3;
+		}
+
+		for (i = 0; i<9; i++){
+			t1 = arrayOut[4][0][0];
+			arrayOut[4][0][0] = arrayOut[2][0][2];
+			arrayOut[2][0][2] = arrayOut[2][0][1];
+			arrayOut[2][0][1] = arrayOut[2][0][0];
+			arrayOut[2][0][0] = arrayOut[5][0][2];
+			arrayOut[5][0][2] = arrayOut[5][0][1];
+			arrayOut[5][0][1] = arrayOut[5][0][0];
+			arrayOut[5][0][0] = arrayOut[3][0][2];
+			arrayOut[3][0][2] = arrayOut[3][0][1];
+			arrayOut[3][0][1] = arrayOut[3][0][0];
+			arrayOut[3][0][0] = arrayOut[4][0][2];
+			arrayOut[4][0][2] = arrayOut[4][0][1];
+			arrayOut[4][0][1] = t1;
+		}
+
+
+		break;
+	case 27:                      //向右翻>
+		for (i = 0; i<3; i++){
+			t1 = arrayOut[1][0][0];
+			t2 = arrayOut[1][1][0];
+			t3 = arrayOut[1][2][0];
+			arrayOut[1][0][0] = arrayOut[1][0][2];
+			arrayOut[1][1][0] = arrayOut[1][0][1];
+			arrayOut[1][2][0] = arrayOut[1][0][0];
+
+			arrayOut[1][0][0] = arrayOut[1][0][2];
+			arrayOut[1][0][1] = arrayOut[1][1][2];
+			arrayOut[1][0][2] = arrayOut[1][2][2];
+
+			arrayOut[1][0][2] = arrayOut[1][2][2];
+			arrayOut[1][1][2] = arrayOut[1][2][1];
+			arrayOut[1][2][2] = arrayOut[1][2][0];
+
+			arrayOut[1][2][0] = t1;
+			arrayOut[1][2][1] = t2;
+			arrayOut[1][2][2] = t3;
+		}
+
+		for (i = 0; i<3; i++){
+			t1 = arrayOut[4][2][0];
+			arrayOut[4][2][0] = arrayOut[2][2][2];
+			arrayOut[2][2][2] = arrayOut[2][2][1];
+			arrayOut[2][2][1] = arrayOut[2][2][0];
+			arrayOut[2][2][0] = arrayOut[5][2][2];
+			arrayOut[5][2][2] = arrayOut[5][2][1];
+			arrayOut[5][2][1] = arrayOut[5][2][0];
+			arrayOut[5][2][0] = arrayOut[3][2][2];
+			arrayOut[3][2][2] = arrayOut[3][2][1];
+			arrayOut[3][2][1] = arrayOut[3][2][0];
+			arrayOut[3][2][0] = arrayOut[4][2][2];
+			arrayOut[4][2][2] = arrayOut[4][2][1];
+			arrayOut[4][2][1] = t1;
+		}
+		for (i = 0; i<3; i++){
+			t1 = arrayOut[4][1][0];
+			arrayOut[4][1][0] = arrayOut[2][1][2];
+			arrayOut[2][1][2] = arrayOut[2][1][1];
+			arrayOut[2][1][1] = arrayOut[2][1][0];
+			arrayOut[2][1][0] = arrayOut[5][1][2];
+			arrayOut[5][1][2] = arrayOut[5][1][1];
+			arrayOut[5][1][1] = arrayOut[5][1][0];
+			arrayOut[5][1][0] = arrayOut[3][1][2];
+			arrayOut[3][1][2] = arrayOut[3][1][1];
+			arrayOut[3][1][1] = arrayOut[3][1][0];
+			arrayOut[3][1][0] = arrayOut[4][1][2];
+			arrayOut[4][1][2] = arrayOut[4][1][1];
+			arrayOut[4][1][1] = t1;
+		}
+
+                t1 = arrayOut[0][0][0];
+		t2 = arrayOut[0][1][0];
+		t3 = arrayOut[0][2][0];
+		arrayOut[0][0][0] = arrayOut[0][0][2];
+		arrayOut[0][1][0] = arrayOut[0][0][1];
+		arrayOut[0][2][0] = arrayOut[0][0][0];
+
+		arrayOut[0][0][0] = arrayOut[0][0][2];
+		arrayOut[0][0][1] = arrayOut[0][1][2];
+		arrayOut[0][0][2] = arrayOut[0][2][2];
+
+		arrayOut[0][0][2] = arrayOut[0][2][2];
+		arrayOut[0][1][2] = arrayOut[0][2][1];
+		arrayOut[0][2][2] = arrayOut[0][2][0];
+
+		arrayOut[0][2][0] = t1;
+		arrayOut[0][2][1] = t2;
+		arrayOut[0][2][2] = t3;
+
+
+		for (i = 0; i<3; i++){
+			t1 = arrayOut[4][0][0];
+			arrayOut[4][0][0] = arrayOut[2][0][2];
+			arrayOut[2][0][2] = arrayOut[2][0][1];
+			arrayOut[2][0][1] = arrayOut[2][0][0];
+			arrayOut[2][0][0] = arrayOut[5][0][2];
+			arrayOut[5][0][2] = arrayOut[5][0][1];
+			arrayOut[5][0][1] = arrayOut[5][0][0];
+			arrayOut[5][0][0] = arrayOut[3][0][2];
+			arrayOut[3][0][2] = arrayOut[3][0][1];
+			arrayOut[3][0][1] = arrayOut[3][0][0];
+			arrayOut[3][0][0] = arrayOut[4][0][2];
+			arrayOut[4][0][2] = arrayOut[4][0][1];
+			arrayOut[4][0][1] = t1;
+		}
+
+		break;
+	case 28:                  //d
+		for (i = 0; i<3; i++){
+			t1 = arrayOut[1][0][0];
+			t2 = arrayOut[1][1][0];
+			t3 = arrayOut[1][2][0];
+			arrayOut[1][0][0] = arrayOut[1][0][2];
+			arrayOut[1][1][0] = arrayOut[1][0][1];
+			arrayOut[1][2][0] = arrayOut[1][0][0];
+
+			arrayOut[1][0][0] = arrayOut[1][0][2];
+			arrayOut[1][0][1] = arrayOut[1][1][2];
+			arrayOut[1][0][2] = arrayOut[1][2][2];
+
+			arrayOut[1][0][2] = arrayOut[1][2][2];
+			arrayOut[1][1][2] = arrayOut[1][2][1];
+			arrayOut[1][2][2] = arrayOut[1][2][0];
+
+			arrayOut[1][2][0] = t1;
+			arrayOut[1][2][1] = t2;
+			arrayOut[1][2][2] = t3;
+		}
+
+		for (i = 0; i<3; i++){
+			t1 = arrayOut[4][2][0];
+			arrayOut[4][2][0] = arrayOut[2][2][2];
+			arrayOut[2][2][2] = arrayOut[2][2][1];
+			arrayOut[2][2][1] = arrayOut[2][2][0];
+			arrayOut[2][2][0] = arrayOut[5][2][2];
+			arrayOut[5][2][2] = arrayOut[5][2][1];
+			arrayOut[5][2][1] = arrayOut[5][2][0];
+			arrayOut[5][2][0] = arrayOut[3][2][2];
+			arrayOut[3][2][2] = arrayOut[3][2][1];
+			arrayOut[3][2][1] = arrayOut[3][2][0];
+			arrayOut[3][2][0] = arrayOut[4][2][2];
+			arrayOut[4][2][2] = arrayOut[4][2][1];
+			arrayOut[4][2][1] = t1;
+		}
+		for (i = 0; i<3; i++){
+			t1 = arrayOut[4][1][0];
+			arrayOut[4][1][0] = arrayOut[2][1][2];
+			arrayOut[2][1][2] = arrayOut[2][1][1];
+			arrayOut[2][1][1] = arrayOut[2][1][0];
+			arrayOut[2][1][0] = arrayOut[5][1][2];
+			arrayOut[5][1][2] = arrayOut[5][1][1];
+			arrayOut[5][1][1] = arrayOut[5][1][0];
+			arrayOut[5][1][0] = arrayOut[3][1][2];
+			arrayOut[3][1][2] = arrayOut[3][1][1];
+			arrayOut[3][1][1] = arrayOut[3][1][0];
+			arrayOut[3][1][0] = arrayOut[4][1][2];
+			arrayOut[4][1][2] = arrayOut[4][1][1];
+			arrayOut[4][1][1] = t1;
+		}
+
+		break;
+	case 29:                  //d'
+		t1 = arrayOut[1][0][0];
+		t2 = arrayOut[1][1][0];
+		t3 = arrayOut[1][2][0];
+		arrayOut[1][0][0] = arrayOut[1][0][2];
+		arrayOut[1][1][0] = arrayOut[1][0][1];
+		arrayOut[1][2][0] = arrayOut[1][0][0];
+
+		arrayOut[1][0][0] = arrayOut[1][0][2];
+		arrayOut[1][0][1] = arrayOut[1][1][2];
+		arrayOut[1][0][2] = arrayOut[1][2][2];
+
+		arrayOut[1][0][2] = arrayOut[1][2][2];
+		arrayOut[1][1][2] = arrayOut[1][2][1];
+		arrayOut[1][2][2] = arrayOut[1][2][0];
+
+		arrayOut[1][2][0] = t1;
+		arrayOut[1][2][1] = t2;
+		arrayOut[1][2][2] = t3;
+		for (i = 0; i<9; i++){
+			t1 = arrayOut[4][2][0];
+			arrayOut[4][2][0] = arrayOut[2][2][2];
+			arrayOut[2][2][2] = arrayOut[2][2][1];
+			arrayOut[2][2][1] = arrayOut[2][2][0];
+			arrayOut[2][2][0] = arrayOut[5][2][2];
+			arrayOut[5][2][2] = arrayOut[5][2][1];
+			arrayOut[5][2][1] = arrayOut[5][2][0];
+			arrayOut[5][2][0] = arrayOut[3][2][2];
+			arrayOut[3][2][2] = arrayOut[3][2][1];
+			arrayOut[3][2][1] = arrayOut[3][2][0];
+			arrayOut[3][2][0] = arrayOut[4][2][2];
+			arrayOut[4][2][2] = arrayOut[4][2][1];
+			arrayOut[4][2][1] = t1;
+		}
+		for (i = 0; i<9; i++){
+			t1 = arrayOut[4][1][0];
+			arrayOut[4][1][0] = arrayOut[2][1][2];
+			arrayOut[2][1][2] = arrayOut[2][1][1];
+			arrayOut[2][1][1] = arrayOut[2][1][0];
+			arrayOut[2][1][0] = arrayOut[5][1][2];
+			arrayOut[5][1][2] = arrayOut[5][1][1];
+			arrayOut[5][1][1] = arrayOut[5][1][0];
+			arrayOut[5][1][0] = arrayOut[3][1][2];
+			arrayOut[3][1][2] = arrayOut[3][1][1];
+			arrayOut[3][1][1] = arrayOut[3][1][0];
+			arrayOut[3][1][0] = arrayOut[4][1][2];
+			arrayOut[4][1][2] = arrayOut[4][1][1];
+			arrayOut[4][1][1] = t1;
+		}
+
+		break;
+	case 30:                      //l
+		for (i = 0; i<3; i++){
+			t1 = arrayOut[2][0][0];
+			t2 = arrayOut[2][1][0];
+			t3 = arrayOut[2][2][0];
+			arrayOut[2][0][0] = arrayOut[2][0][2];
+			arrayOut[2][1][0] = arrayOut[2][0][1];
+			arrayOut[2][2][0] = arrayOut[2][0][0];
+
+			arrayOut[2][0][0] = arrayOut[2][0][2];
+			arrayOut[2][0][1] = arrayOut[2][1][2];
+			arrayOut[2][0][2] = arrayOut[2][2][2];
+
+			arrayOut[2][0][2] = arrayOut[2][2][2];
+			arrayOut[2][1][2] = arrayOut[2][2][1];
+			arrayOut[2][2][2] = arrayOut[2][2][0];
+
+			arrayOut[2][2][0] = t1;
+			arrayOut[2][2][1] = t2;
+			arrayOut[2][2][2] = t3;
+		}
+
+		for (i = 0; i<9; i++){
+			t1 = arrayOut[4][2][0];
+			arrayOut[4][2][0] = arrayOut[1][0][0];
+			arrayOut[1][0][0] = arrayOut[1][1][0];
+			arrayOut[1][1][0] = arrayOut[1][2][0];
+			arrayOut[1][2][0] = arrayOut[5][2][2];
+			arrayOut[5][2][2] = arrayOut[5][1][2];
+			arrayOut[5][1][2] = arrayOut[5][0][2];
+			arrayOut[5][0][2] = arrayOut[0][0][0];
+			arrayOut[0][0][0] = arrayOut[0][1][0];
+			arrayOut[0][1][0] = arrayOut[0][2][0];
+			arrayOut[0][2][0] = arrayOut[4][0][0];
+			arrayOut[4][0][0] = arrayOut[4][1][0];
+			arrayOut[4][1][0] = t1;
+		}
+		for (i = 0; i<3; i++){
+			t1 = arrayOut[0][2][1];
+			arrayOut[0][2][1] = arrayOut[0][1][1];
+			arrayOut[0][1][1] = arrayOut[0][0][1];
+			arrayOut[0][0][1] = arrayOut[5][0][1];
+			arrayOut[5][0][1] = arrayOut[5][1][1];
+			arrayOut[5][1][1] = arrayOut[5][2][1];
+			arrayOut[5][2][1] = arrayOut[1][2][1];
+			arrayOut[1][2][1] = arrayOut[1][1][1];
+			arrayOut[1][1][1] = arrayOut[1][0][1];
+			arrayOut[1][0][1] = arrayOut[4][2][1];
+			arrayOut[4][2][1] = arrayOut[4][1][1];
+			arrayOut[4][1][1] = arrayOut[4][0][1];
+			arrayOut[4][0][1] = t1;
+		}
+	
+		break;
+	default:
+		break;
+	}
+
+}
+
+void exchange13()
+{
+	Temp[0] = Pixel[0]; Temp[1] = Pixel[1]; Temp[2] = Pixel[2];
+	Temp[3] = Pixel[3]; Temp[4] = Pixel[4]; Temp[5] = Pixel[5];
+	Temp[6] = Pixel[6]; Temp[7] = Pixel[7]; Temp[8] = Pixel[8];
+	
+	Pixel[0] = Pixel[18]; Pixel[1] = Pixel[19]; Pixel[2] = Pixel[20];
+	Pixel[3] = Pixel[21]; Pixel[4] = Pixel[22]; Pixel[5] = Pixel[23];
+	Pixel[6] = Pixel[24]; Pixel[7] = Pixel[25]; Pixel[8] = Pixel[26];
+	
+	Pixel[18] = Temp[0]; Pixel[19] = Temp[1]; Pixel[20] = Temp[2];
+	Pixel[21] = Temp[3]; Pixel[22] = Temp[4]; Pixel[23] = Temp[5];
+	Pixel[24] = Temp[6]; Pixel[25] = Temp[7]; Pixel[26] = Temp[8];
+	
+}
+
+void shanshuo(void)
+{	
+    switch (val)
+    {    
+	case 31:   
+	   Pixel[4] += 0x10;
+	   break;
+	case 32:   
+	   Pixel[40] += 0x10;
+	   break;
+	case 33:   
+  	   Pixel[5] += 0x10;
+	   Pixel[46] += 0x10;
+  	   Pixel[7] += 0x10;
+	   Pixel[16] += 0x10;
+  	   Pixel[3] += 0x10;
+	   Pixel[41] += 0x10;
+  	   Pixel[1] += 0x10;
+	   Pixel[34] += 0x10;
+	   break;
+	case 34:   
+  	   Pixel[41] += 0x10;
+	   Pixel[3] += 0x10;
+	   break;
+	case 35:   
+  	   Pixel[43] += 0x10;
+	   Pixel[14] += 0x10;
+  	   Pixel[39] += 0x10;
+	   Pixel[23] += 0x10;
+  	   Pixel[37] += 0x10;
+	   Pixel[30] += 0x10;
+  	   Pixel[41] += 0x10;
+	   Pixel[3] += 0x10;
+	   break;
+	case 36:   
+  	   Pixel[37] += 0x10;
+	   Pixel[30] += 0x10;
+	   break;
+	case 37:   
+  	   Pixel[39] += 0x10;
+	   Pixel[23] += 0x10;
+	   break;
+	case 38:   
+  	   Pixel[43] += 0x10;
+	   Pixel[14] += 0x10;
+	   break;
+	case 39:   
+  	   Pixel[43] += 0x10;
+	   Pixel[14] += 0x10;
+  	   Pixel[39] += 0x10;
+	   Pixel[23] += 0x10;
+  	   Pixel[37] += 0x10;
+	   Pixel[30] += 0x10;
+	   break;
+	case 40:   
+  	   Pixel[3] += 0x10;
+	   Pixel[41] += 0x10;
+	   break;
+	case 41:   
+  	   Pixel[41] += 0x10;
+	   Pixel[40] += 0x10;
+	   break;
+	case 42:   
+  	   Pixel[42] += 0x10;
+  	   Pixel[8] += 0x10;
+	   Pixel[15] += 0x10;
+	   break;
+	case 43:   
+  	   Pixel[42] += 0x10;
+  	   Pixel[8] += 0x10;
+	   Pixel[15] += 0x10;
+  	   Pixel[13] += 0x10;
+	   Pixel[40] += 0x10;
+	   break;
+	case 44:   
+  	   Pixel[44] += 0x10;
+  	   Pixel[9] += 0x10;
+	   Pixel[24] += 0x10;
+	   break;
+	case 45:   
+  	   Pixel[16] += 0x10;
+	   Pixel[7] += 0x10;
+	   break;
+	case 46:   
+  	   Pixel[16] += 0x10;
+	   Pixel[13] += 0x10;
+	   break;
+	case 47:   
+  	   Pixel[40] += 0x10;
+	   Pixel[7] += 0x10;
+	   break;
+	case 48:   
+  	   Pixel[43] += 0x10;
+	   Pixel[14] += 0x10;
+	   break;
+	case 49:   
+  	   Pixel[5] += 0x10;
+  	   Pixel[4] += 0x10;
+	   Pixel[3] += 0x10;
+	   break;
+	case 50:   
+  	   Pixel[1] += 0x10;
+  	   Pixel[4] += 0x10;
+	   Pixel[7] += 0x10;
+	   break;
+	case 51:   
+  	   Pixel[1] += 0x10;
+  	   Pixel[4] += 0x10;
+	   Pixel[5] += 0x10;
+	   break;
+	case 52:   
+  	   Pixel[7] += 0x10;
+  	   Pixel[4] += 0x10;
+	   Pixel[5] += 0x10;
+	   break;
+	case 53:   
+  	   Pixel[7] += 0x10;
+  	   Pixel[4] += 0x10;
+	   Pixel[3] += 0x10;
+	   break;
+	case 54:   
+  	   Pixel[1] += 0x10;
+  	   Pixel[4] += 0x10;
+	   Pixel[3] += 0x10;
+	   break;
+	case 55:   
+  	   Pixel[1] += 0x10;
+  	   Pixel[4] += 0x10;
+	   Pixel[3] += 0x10;
+  	   Pixel[7] += 0x10;
+	   Pixel[5] += 0x10;
+	   break;
+	case 56:   
+  	   Pixel[0] += 0x10;
+	   Pixel[6] += 0x10;
+  	   Pixel[2] += 0x10;
+	   Pixel[8] += 0x10;
+	   break;
+	case 57:   
+  	   Pixel[15] += 0x10;
+	   break;
+	case 58:   
+  	   Pixel[42] += 0x10;
+	   break;
+	case 59:   
+  	   Pixel[8] += 0x10;
+	   break;
+	case 60:   
+  	   Pixel[36] += 0x10;
+	   Pixel[42] += 0x10;
+  	   Pixel[15] += 0x10;
+	   Pixel[17] += 0x10;
+  	   Pixel[47] += 0x10;
+	   Pixel[45] += 0x10;
+  	   Pixel[33] += 0x10;
+	   Pixel[35] += 0x10;
+	   break;
+	case 61:   
+  	   Pixel[36] += 0x10;
+	   Pixel[42] += 0x10;
+	   break;
+	case 62:   
+  	   Pixel[41] += 0x10;
+	   Pixel[16] += 0x10;
+  	   Pixel[46] += 0x10;
+	   Pixel[34] += 0x10;
+
+	case 63:   
+  	   Pixel[23] += 0x10;
+  	   Pixel[19] += 0x10;
+	   Pixel[22] += 0x10;
+  	   Pixel[25] += 0x10;
+	   Pixel[27] += 0x10;
+	   break;
+	case 64:   
+  	   Pixel[18] += 0x10;
+	   Pixel[24] += 0x10;
+  	   Pixel[26] += 0x10;
+	   Pixel[20] += 0x10;
+  	   Pixel[38] += 0x10;
+	   Pixel[44] += 0x10;
+  	   Pixel[9] += 0x10;
+	   Pixel[11] += 0x10;
+  	   Pixel[53] += 0x10;
+	   Pixel[51] += 0x10;
+  	   Pixel[27] += 0x10;
+	   Pixel[29] += 0x10;
+	   break;
+	case 65:   
+  	   Pixel[37] += 0x10;
+	   Pixel[43] += 0x10;
+  	   Pixel[14] += 0x10;
+	   Pixel[12] += 0x10;
+  	   Pixel[48] += 0x10;
+	   Pixel[50] += 0x10;
+  	   Pixel[32] += 0x10;
+	   Pixel[30] += 0x10;
+	   break;
+	case 66:   
+  	   Pixel[4] += 0x10;
+  	   Pixel[5] += 0x10;
+	   Pixel[1] += 0x10;
+  	   Pixel[7] += 0x10;
+	   Pixel[3] += 0x10;
+	   break;
+	case 67:   
+  	   Pixel[36] += 0x10;
+	   Pixel[42] += 0x10;
+  	   Pixel[15] += 0x10;
+	   Pixel[17] += 0x10;
+  	   Pixel[47] += 0x10;
+	   Pixel[45] += 0x10;
+  	   Pixel[33] += 0x10;
+	   Pixel[35] += 0x10;
+	   break;
+	case 68:   
+  	   Pixel[41] += 0x10;
+	   Pixel[16] += 0x10;
+  	   Pixel[46] += 0x10;
+	   Pixel[34] += 0x10;	  
+	   break;   
+      default:
+		break;
+    }
+}
